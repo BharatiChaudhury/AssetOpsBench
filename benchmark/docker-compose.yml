@@ -1,10 +1,9 @@
 services:
   assetopsbench:
     platform: linux/amd64
-    image: quay.io/assetopsbench-extra
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ../scenarios/:/home/scenarios/  # location to all utterances
       - ./run_plan_execute.py:/home/run_plan_execute.py # your python script to run it all

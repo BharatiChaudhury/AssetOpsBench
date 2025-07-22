@@ -36,6 +36,8 @@ PLAN_PREFIX = os.path.dirname(os.path.abspath(__file__)) + "/plan/"
 
 UTTERRANCE_FILE = '/home/scenarios/multi_agent/end2end_utterance.json'
 
+from evaluation_agent.metrics import MetricsEvaluator
+
 
 def run_planning_workflow_with_reflection(
         question, llm_model, qid, workflow, generate_steps_only=False
@@ -143,11 +145,14 @@ def run_react(utterance_file, react_llm_model_id, workflow="pr", generate_steps_
             f"ID: {utterance['id']}, Text: {utterance['text']}, model: {react_llm_model_id}, ReactAgent..."
         )
         trajectory_file = f"trajectory/ReactAgent/Model_{react_llm_model_id}_Q_{utterance['id']}_trajectory_output.json"
+        metrics_file = f"trajectory/ReactAgent/Model_{react_llm_model_id}_Q_{utterance['id']}_metrics.json"
 
         if os.path.exists(trajectory_file):
             print(f"Skipping {utterance['id']}")
             continue
 
+        metrics = MetricsEvaluator()
+        metrics.start_timer()
         ans = run_planning_workflow(
             utterance["text"],
             react_llm_model_id,
@@ -155,6 +160,12 @@ def run_react(utterance_file, react_llm_model_id, workflow="pr", generate_steps_
             workflow=workflow,
             generate_steps_only=generate_steps_only,
         )
+        metrics.stop_timer()
+        # Placeholder: You can add more sophisticated checks here
+        metrics.record_task_completion(ans is not None)
+        metrics.record_accuracy(True)  # Placeholder, replace with real check
+        metrics.record_num_steps(len(ans["trajectory"]) if isinstance(ans, dict) and "trajectory" in ans else 1)
+        # Add more metric recordings as needed
 
         if generate_steps_only:
             continue
@@ -163,6 +174,8 @@ def run_react(utterance_file, react_llm_model_id, workflow="pr", generate_steps_
 
         with open(trajectory_file, "w") as file:
             json.dump(output, file, indent=4)
+        with open(metrics_file, "w") as mfile:
+            json.dump(metrics.get_metrics(), mfile, indent=4)
 
 
 def run_react_reflect(utterance_file, react_llm_model_id, workflow="pr", generate_steps_only=False, reverse=False):
@@ -181,11 +194,14 @@ def run_react_reflect(utterance_file, react_llm_model_id, workflow="pr", generat
             f"ID: {utterance['id']}, Text: {utterance['text']}, model: {react_llm_model_id}, ReactReflectAgent..."
         )
         trajectory_file = f"trajectory/ReactReflectAgent/Model_{react_llm_model_id}_Q_{utterance['id']}_trajectory_output.json"
+        metrics_file = f"trajectory/ReactReflectAgent/Model_{react_llm_model_id}_Q_{utterance['id']}_metrics.json"
 
         if os.path.exists(trajectory_file):
             print(f"Skipping {utterance['id']}")
             continue
 
+        metrics = MetricsEvaluator()
+        metrics.start_timer()
         ans = run_planning_workflow_with_reflection(
             utterance["text"],
             react_llm_model_id,
@@ -193,6 +209,12 @@ def run_react_reflect(utterance_file, react_llm_model_id, workflow="pr", generat
             workflow=workflow,
             generate_steps_only=generate_steps_only,
         )
+        metrics.stop_timer()
+        # Placeholder: You can add more sophisticated checks here
+        metrics.record_task_completion(ans is not None)
+        metrics.record_accuracy(True)  # Placeholder, replace with real check
+        metrics.record_num_steps(len(ans["trajectory"]) if isinstance(ans, dict) and "trajectory" in ans else 1)
+        # Add more metric recordings as needed
 
         if generate_steps_only:
             continue
@@ -201,6 +223,8 @@ def run_react_reflect(utterance_file, react_llm_model_id, workflow="pr", generat
 
         with open(trajectory_file, "w") as file:
             json.dump(output, file, indent=4)
+        with open(metrics_file, "w") as mfile:
+            json.dump(metrics.get_metrics(), mfile, indent=4)
 
 
 if __name__ == "__main__":
